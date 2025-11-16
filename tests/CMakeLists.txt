@@ -23,11 +23,24 @@ cmake_minimum_required(VERSION 3.12)
 
 project(oss-cad-suite-cmake-test VERSION 1.0)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../cmake/verilator-config.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/oss-cad-suite-config.cmake)
 
-add_executable(tests src/top.cpp)
-verilate(tests
-  PREFIX Vtop
-  SOURCES src/top.sv
-  TRACE
-  PUBLIC)
+add_synthesis_target(
+  SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*
+  TOP_MODULE top
+  TARGET_FPGA ecp5
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/synth.json)
+
+add_place_and_route_target(
+  INPUT ${CMAKE_CURRENT_BINARY_DIR}/synth.json
+  TARGET_FPGA ecp5
+  PACKAGE_OPTIONS --85k --package CABGA756
+  PINOUT_OPTIONS --lpf ${CMAKE_CURRENT_LIST_DIR}/pinout.lpf
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/placement.config)
+
+add_ecp5_bitstream_target(
+  INPUT ${CMAKE_CURRENT_BINARY_DIR}/placement.config
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bitstream.bit
+  COMPRESS)
+
+add_custom_target(gen DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/bitstream.bit)

@@ -74,6 +74,10 @@ function(add_synthesis_target)
     message(FATAL_ERROR "Need at least one source")
   endif()
 
+  FILE(GLOB SYNTH_SOURCES ${SYNTH_SOURCES})
+
+  message("${SYNTH_SOURCES}")
+
   if (NOT SYNTH_OUTPUT)
     message(FATAL_ERROR "Need an output file")
   endif()

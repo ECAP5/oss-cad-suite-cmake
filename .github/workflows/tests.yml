@@ -38,4 +38,4 @@ jobs:
       run: cmake -S ${{github.workspace}}/tests -B ${{github.workspace}}/build -GNinja
 
     - name: Run tests
-      run: ninja -C ${{github.workspace}}/build tests
+      run: ninja -C ${{github.workspace}}/build gen
