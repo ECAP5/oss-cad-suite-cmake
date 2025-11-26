@@ -116,7 +116,7 @@ function(add_place_and_route_target)
 
   string (TOUPPER ${PNR_TARGET_FPGA} TARGET_FPGA_STR)
 
-  set(NEXTPNR_COMMAND ${NEXTPNR_${TARGET_FPGA_STR}_BIN} ${PACKAGE_OPTIONS_STR} --json ${PNR_INPUT} ${PINOUT_OPTIONS_STR} --textcfg ${PNR_OUTPUT})
+  set(NEXTPNR_COMMAND ${NEXTPNR_${TARGET_FPGA_STR}_BIN} ${PNR_PACKAGE_OPTIONS} --json ${PNR_INPUT} ${PNR_PINOUT_OPTIONS} --textcfg ${PNR_OUTPUT})
 
   add_custom_command(
     OUTPUT ${PNR_OUTPUT}
