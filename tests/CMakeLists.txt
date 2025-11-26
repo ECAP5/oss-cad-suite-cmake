@@ -23,11 +23,17 @@ cmake_minimum_required(VERSION 3.12)
 
 project(oss-cad-suite-cmake-test VERSION 1.0)
 
+# Define an interface library
+add_library(oss-cad-suite-cmake-test INTERFACE)
+target_sources(oss-cad-suite-cmake-test INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/src/top.sv
+)
+
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/oss-cad-suite-config.cmake)
 
 add_synthesis_target(
-  SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*
-  TOP_MODULE top
+  LIB         oss-cad-suite-cmake-test
+  TOP_MODULE  top
   TARGET_FPGA ecp5
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/synth.json)
 
