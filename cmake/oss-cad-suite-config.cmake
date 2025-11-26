@@ -67,16 +67,16 @@ set(oss_cad_suite_FOUND 1)
 
 function(add_synthesis_target)
   cmake_parse_arguments(SYNTH "" # options
-                              "OUTPUT;TARGET_FPGA;TOP_MODULE"     # one-value args
-                              "SOURCES" # multi-value args
+                              "LIB;OUTPUT;TARGET_FPGA;TOP_MODULE"     # one-value args
+                              "" # multi-value args
                                  ${ARGN})
-  if (NOT SYNTH_SOURCES)
-    message(FATAL_ERROR "Need at least one source")
+  if (NOT SYNTH_LIB)
+    message(FATAL_ERROR "Need a source library")
   endif()
 
-  FILE(GLOB SYNTH_SOURCES ${SYNTH_SOURCES})
-
-  message("${SYNTH_SOURCES}")
+  if(NOT TARGET ${SYNTH_LIB})
+    message(FATAL_ERROR "Library ${SYNTH_LIB} not defined")
+  endif()
 
   if (NOT SYNTH_OUTPUT)
     message(FATAL_ERROR "Need an output file")
@@ -92,8 +92,9 @@ function(add_synthesis_target)
 
   add_custom_command(
     OUTPUT ${SYNTH_OUTPUT}
-    DEPENDS ${SYNTH_SOURCES}
-    COMMAND ${YOSYS_BIN} -p \'read -sv ${SYNTH_SOURCES} \; synth_${SYNTH_TARGET_FPGA} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\')
+    DEPENDS $<TARGET_PROPERTY:${SYNTH_LIB},INTERFACE_SOURCES>
+    COMMAND ${YOSYS_BIN} -p \'read -sv $<TARGET_PROPERTY:${SYNTH_LIB},INTERFACE_SOURCES> "\;" synth_${SYNTH_TARGET_FPGA} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
+    COMMAND_EXPAND_LISTS)
 endfunction()
 
 function(add_place_and_route_target)
