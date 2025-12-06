@@ -145,13 +145,12 @@ function(add_synthesis_target)
 
   # Generate the define parameter string
   foreach(DEFINE IN LISTS SYNTH_DEFINES)
-    list(APPEND DEFINE_PARAM_STRING "-D")
-    list(APPEND DEFINE_PARAM_STRING ${DEFINE})
+    list(APPEND DEFINE_PARAM_STRING "-D${DEFINE}")
   endforeach()
 
   add_custom_command(
     OUTPUT ${FLAT_SOURCE_PATH}
-    COMMAND sv2v ${LIB_SOURCES} > ${FLAT_SOURCE_PATH}
+    COMMAND sv2v ${DEFINE_PARAM_STRING} ${LIB_SOURCES} > ${FLAT_SOURCE_PATH}
     DEPENDS ${LIB_SOURCES}
     DEPENDS ${SYNTH_DEPENDS}
     COMMAND_EXPAND_LISTS)
@@ -159,7 +158,7 @@ function(add_synthesis_target)
   add_custom_command(
     OUTPUT ${SYNTH_OUTPUT}
     DEPENDS ${FLAT_SOURCE_PATH}
-    COMMAND ${YOSYS_BIN} -p \'read_verilog ${DEFINE_PARAM_STRING} ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} ${ABC9_OPTION} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
+    COMMAND ${YOSYS_BIN} -p \'read_verilog ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} ${ABC9_OPTION} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
     COMMAND_EXPAND_LISTS)
 endfunction()
 
