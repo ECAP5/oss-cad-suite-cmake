@@ -83,8 +83,36 @@ if (NOT SV2V_BIN)
   message(FATAL_ERROR "Cannot find sv2v executable.")
 endif()
 
+function(get_all_sources_recursive TARGET_NAME OUTPUT_LIST)
+  set(CURRENT_FILES "")
+
+  get_target_property(RAW_SOURCES ${TARGET_NAME} INTERFACE_SOURCES)
+
+  if(RAW_SOURCES AND NOT "${RAW_SOURCES}" MATCHES "NOTFOUND")
+    list(APPEND CURRENT_FILES ${RAW_SOURCES})
+  endif()
+
+  get_target_property(RAW_LIBS ${TARGET_NAME} INTERFACE_LINK_LIBRARIES)
+  if(RAW_LIBS AND NOT "${RAW_LIBS}" MATCHES "NOTFOUND")
+    foreach(DEP ${RAW_LIBS})
+      if(TARGET ${DEP})
+        get_all_sources_recursive(${DEP} SUB_FILES_LIST)
+        list(APPEND CURRENT_FILES ${SUB_FILES_LIST})
+      else()
+        message(FATAL_ERROR "Recursive dependency ${DEP} not found")  
+      endif()
+    endforeach()
+  endif()
+
+  if(CURRENT_FILES)
+    list(REMOVE_DUPLICATES CURRENT_FILES)
+  endif()
+
+  set(${OUTPUT_LIST} ${CURRENT_FILES} PARENT_SCOPE)
+endfunction()
+
 function(add_synthesis_target)
-  cmake_parse_arguments(SYNTH "" # options
+  cmake_parse_arguments(SYNTH "ABC9" # options
                               "LIB;OUTPUT;TARGET_FPGA;TOP_MODULE"     # one-value args
                               "" # multi-value args
                                  ${ARGN})
@@ -108,18 +136,24 @@ function(add_synthesis_target)
     message(FATAL_ERROR "Need a top module")
   endif()
 
+  if(SYNTH_ABC9)
+    set(ABC9_OPTION "-abc9")
+  endif()
+
   set(FLAT_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${SYNTH_LIB}_flat.v)
+
+  get_all_sources_recursive(${SYNTH_LIB} LIB_SOURCES)
 
   add_custom_command(
     OUTPUT ${FLAT_SOURCE_PATH}
-    COMMAND sv2v $<TARGET_PROPERTY:${SYNTH_LIB},INTERFACE_SOURCES> > ${FLAT_SOURCE_PATH}
-    DEPENDS ${SYNTH_LIB}
+    COMMAND sv2v ${LIB_SOURCES} > ${FLAT_SOURCE_PATH}
+    DEPENDS ${LIB_SOURCES}
     COMMAND_EXPAND_LISTS)
 
   add_custom_command(
     OUTPUT ${SYNTH_OUTPUT}
     DEPENDS ${FLAT_SOURCE_PATH}
-    COMMAND ${YOSYS_BIN} -p \'read -sv ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
+    COMMAND ${YOSYS_BIN} -p \'read -sv ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} ${ABC9_OPTION} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
     COMMAND_EXPAND_LISTS)
 endfunction()
 
