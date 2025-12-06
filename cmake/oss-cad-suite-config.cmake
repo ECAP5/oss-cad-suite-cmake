@@ -2,20 +2,20 @@
 #  ________/ /  ___ _(_)__  ___
 # / __/ __/ _ \/ _ `/ / _ \/ -_)
 # \__/\__/_//_/\_,_/_/_//_/\__/
-# 
+#
 # Copyright (C) Clément Chaine
 # This file is part of oss-cad-suite-cmake <https://github.com/ecap5/oss-cad-suite-cmake>
-# 
+#
 # oss-cad-suite-cmake is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # oss-cad-suite-cmake is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with oss-cad-suite-cmake.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -99,7 +99,7 @@ function(get_all_sources_recursive TARGET_NAME OUTPUT_LIST)
         get_all_sources_recursive(${DEP} SUB_FILES_LIST)
         list(APPEND CURRENT_FILES ${SUB_FILES_LIST})
       else()
-        message(FATAL_ERROR "Recursive dependency ${DEP} not found")  
+        message(FATAL_ERROR "Recursive dependency ${DEP} not found")
       endif()
     endforeach()
   endif()
@@ -114,7 +114,7 @@ endfunction()
 function(add_synthesis_target)
   cmake_parse_arguments(SYNTH "ABC9" # options
                               "LIB;OUTPUT;TARGET_FPGA;TOP_MODULE"     # one-value args
-                              "DEPENDS" # multi-value args
+                              "DEPENDS;DEFINES" # multi-value args
                                  ${ARGN})
   if (NOT SYNTH_LIB)
     message(FATAL_ERROR "Need a source library")
@@ -141,8 +141,13 @@ function(add_synthesis_target)
   endif()
 
   set(FLAT_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${SYNTH_LIB}_flat.v)
-
   get_all_sources_recursive(${SYNTH_LIB} LIB_SOURCES)
+
+  # Generate the define parameter string
+  foreach(DEFINE IN LISTS SYNTH_DEFINES)
+    list(APPEND DEFINE_PARAM_STRING "-D")
+    list(APPEND DEFINE_PARAM_STRING ${DEFINE})
+  endforeach()
 
   add_custom_command(
     OUTPUT ${FLAT_SOURCE_PATH}
@@ -154,7 +159,7 @@ function(add_synthesis_target)
   add_custom_command(
     OUTPUT ${SYNTH_OUTPUT}
     DEPENDS ${FLAT_SOURCE_PATH}
-    COMMAND ${YOSYS_BIN} -p \'read -sv ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} ${ABC9_OPTION} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
+    COMMAND ${YOSYS_BIN} -p \'read_verilog ${DEFINE_PARAM_STRING} ${FLAT_SOURCE_PATH} "\;" synth_${SYNTH_TARGET_FPGA} ${ABC9_OPTION} -top ${SYNTH_TOP_MODULE} -json ${SYNTH_OUTPUT}\'
     COMMAND_EXPAND_LISTS)
 endfunction()
 
