@@ -206,3 +206,57 @@ function(add_ecp5_bitstream_target)
     DEPENDS ${BITSTREAM_INPUT}
     COMMAND ${ECPPACK_BIN} ${COMMAND_ARGS} --bit ${BITSTREAM_OUTPUT} ${BITSTREAM_INPUT})
 endfunction()
+
+set(STAT_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../config/stat.tcl)
+function(add_synth_stat_target)
+  cmake_parse_arguments(SYNTH "ABC9" # options
+    "LIB;OUT_DIR;TARGET_FPGA;TOP_MODULE;REPORT_NAME"     # one-value args
+                              "" # multi-value args
+                                 ${ARGN})
+  if (NOT SYNTH_LIB)
+    message(FATAL_ERROR "Need a source library")
+  endif()
+
+  if(NOT TARGET ${SYNTH_LIB})
+    message(FATAL_ERROR "Library ${SYNTH_LIB} not defined")
+  endif()
+
+  if (NOT SYNTH_TARGET_FPGA)
+    message(FATAL_ERROR "Need an FPGA target")
+  endif()
+
+  if (NOT SYNTH_TOP_MODULE)
+    message(FATAL_ERROR "Need a top module")
+  endif()
+
+  if (NOT SYNTH_REPORT_NAME)
+    message(FATAL_ERROR "Need a report name")
+  endif()
+
+  if(SYNTH_ABC9)
+    set(ABC9_ENV USE_ABC9=1)
+  endif()
+
+  set(FLAT_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${SYNTH_LIB}_flat.v)
+
+  get_all_sources_recursive(${SYNTH_LIB} LIB_SOURCES)
+
+  add_custom_command(
+    OUTPUT ${FLAT_SOURCE_PATH}
+    COMMAND sv2v ${LIB_SOURCES} > ${FLAT_SOURCE_PATH}
+    DEPENDS ${LIB_SOURCES}
+    COMMAND_EXPAND_LISTS)
+
+  add_custom_command(
+    OUTPUT  ${SYNTH_OUT_DIR}/${SYNTH_REPORT_NAME}
+    DEPENDS ${FLAT_SOURCE_PATH}
+    COMMAND ${CMAKE_COMMAND} -E env
+            TOP=${SYNTH_TOP_MODULE} 
+            SOURCE_FILE=${FLAT_SOURCE_PATH} 
+            OUT_DIR=${SYNTH_OUT_DIR} 
+            TARGET_FPGA=${SYNTH_TARGET_FPGA} 
+            REPORT_NAME=${SYNTH_REPORT_NAME}
+            ${ABC9_ENV}
+            ${YOSYS_BIN} -c ${STAT_SCRIPT}
+    COMMAND_EXPAND_LISTS)
+endfunction()
