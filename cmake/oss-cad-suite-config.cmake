@@ -114,7 +114,7 @@ endfunction()
 function(add_synthesis_target)
   cmake_parse_arguments(SYNTH "ABC9" # options
                               "LIB;OUTPUT;TARGET_FPGA;TOP_MODULE"     # one-value args
-                              "" # multi-value args
+                              "DEPENDS" # multi-value args
                                  ${ARGN})
   if (NOT SYNTH_LIB)
     message(FATAL_ERROR "Need a source library")
@@ -148,6 +148,7 @@ function(add_synthesis_target)
     OUTPUT ${FLAT_SOURCE_PATH}
     COMMAND sv2v ${LIB_SOURCES} > ${FLAT_SOURCE_PATH}
     DEPENDS ${LIB_SOURCES}
+    DEPENDS ${SYNTH_DEPENDS}
     COMMAND_EXPAND_LISTS)
 
   add_custom_command(
