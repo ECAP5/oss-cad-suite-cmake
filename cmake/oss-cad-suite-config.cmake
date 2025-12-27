@@ -165,7 +165,7 @@ endfunction()
 function(add_place_and_route_target)
   cmake_parse_arguments(PNR "" # options
                             "INPUT;OUTPUT;TARGET_FPGA"     # one-value args
-                            "PACKAGE_OPTIONS;PINOUT_OPTIONS" # multi-value args
+                            "PACKAGE_OPTIONS;PINOUT_OPTIONS;NEXTPNR_OPTIONS" # multi-value args
                             ${ARGN})
   if (NOT PNR_INPUT)
     message(FATAL_ERROR "Need an input file")
@@ -181,12 +181,13 @@ function(add_place_and_route_target)
 
   string (TOUPPER ${PNR_TARGET_FPGA} TARGET_FPGA_STR)
 
-  set(NEXTPNR_COMMAND ${NEXTPNR_${TARGET_FPGA_STR}_BIN} ${PNR_PACKAGE_OPTIONS} --json ${PNR_INPUT} ${PNR_PINOUT_OPTIONS} --textcfg ${PNR_OUTPUT})
+  set(NEXTPNR_COMMAND ${NEXTPNR_${TARGET_FPGA_STR}_BIN} ${PNR_PACKAGE_OPTIONS} --json ${PNR_INPUT} ${PNR_PINOUT_OPTIONS} --textcfg ${PNR_OUTPUT} --Werror ${NEXTPNR_OPTIONS})
 
   add_custom_command(
     OUTPUT ${PNR_OUTPUT}
     DEPENDS ${PNR_INPUT}
-    COMMAND ${NEXTPNR_COMMAND})
+    COMMAND ${NEXTPNR_COMMAND}
+    COMMAND_EXPAND_LISTS)
 endfunction()
 
 function(add_ecp5_bitstream_target)
