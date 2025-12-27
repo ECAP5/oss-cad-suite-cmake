@@ -63,6 +63,13 @@ if (NOT ECPPACK_BIN)
   message(FATAL_ERROR "Cannot find ecppack executable.")
 endif()
 
+find_program(ECPPLL_BIN NAMES ecppll
+  HINTS ${OSS_CAD_SUITE_ROOT}/bin ENV OSS_CAD_SUITE_ROOT
+  NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+if (NOT ECPPLL_BIN)
+  message(FATAL_ERROR "Cannot find ecppll executable.")
+endif()
+
 set(oss_cad_suite_FOUND 1)
 
 # Prefer SV2V_ROOT from environment
@@ -211,4 +218,27 @@ function(add_ecp5_bitstream_target)
     OUTPUT ${BITSTREAM_OUTPUT}
     DEPENDS ${BITSTREAM_INPUT}
     COMMAND ${ECPPACK_BIN} ${COMMAND_ARGS} --bit ${BITSTREAM_OUTPUT} ${BITSTREAM_INPUT})
+endfunction()
+
+function(add_ecp5_pll_generation)
+  cmake_parse_arguments(ARG       "" # options
+                                  "INPUT_FREQ;OUTPUT_FREQ;MODULE_NAME"     # one-value args
+                                  "" # multi-value args
+                                  ${ARGN})
+  if (NOT ARG_INPUT_FREQ)
+    message(FATAL_ERROR "Need an input frequency")
+  endif()
+
+  if (NOT ARG_OUTPUT_FREQ)
+    message(FATAL_ERROR "Need an output frequency")
+  endif()
+
+  if (NOT ARG_MODULE_NAME)
+    message(FATAL_ERROR "Need a module name")
+  endif()
+
+  # We want it to be regenerated every time
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ARG_MODULE_NAME}.v
+    COMMAND ${ECPPLL_BIN} -i ${ARG_INPUT_FREQ} -o ${ARG_OUTPUT_FREQ} --module ${ARG_MODULE_NAME} --file ${CMAKE_CURRENT_BINARY_DIR}/${ARG_MODULE_NAME}.v)
 endfunction()
